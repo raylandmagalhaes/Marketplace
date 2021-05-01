@@ -1,0 +1,138 @@
+---
+title: "Portfólio Marketplace"
+author: "Rayland"
+date: "12/04/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Objetivos
+ 
+Neste projeto eu pretendo impletmentar as seguintes técnicas:
+
+* Clusterização de clientes
+* Modelo de previsão de vendas
+* Modelos RTV e Churn
+* Teste de elasticidade de preço
+
+# ```{r}
+# #Criando a ordem com que eu vou executar cada objetivo.
+# sample(c("elasticidade","RTV e Curn","Previsão de vendas","Clusterização"),size = 4,replace = F)
+# ```
+
+## Dados
+
+Vou utilizar o conjunto de dados \textit{Brazilian E-Commerce Public Dataset by Olist} disponibilizado no Kaggle, pois, este possui dados de 100.000 compras feitas em multiplos marketplaces no Brasil de 2016 a 2018.
+
+O conjunto de dados é constituído de 9 tabelas que se relacionam da seguinte forma:
+
+```{r echo=FALSE, warning=FALSE, out.height="100%", out.width="100%"}
+library(bookdown)
+library(knitr)
+library(tidyverse)
+library(readr)
+library(stringr)
+
+include_graphics("data_organization.png")
+
+```
+
+<!-- ![Data organization.](data_organization.png) -->
+
+
+## Análise exploratória dos dados
+
+```{r echo=FALSE, warning=FALSE}
+
+
+
+
+#customer_id customer_zip_code customer_city customer_state
+clientes <- read_csv("files/olist_customers_dataset.csv")
+
+#data de compra, previsão de entrega, status da compra. 
+pedidos <- read_csv("files/olist_orders_dataset.csv")
+
+#categoria do produto
+produtos <- read_csv("files/olist_products_dataset.csv")
+
+#id produto, id vendedor, id compra, preço,frete
+items <- read_csv("files/olist_order_items_dataset.csv")
+
+#seller_zip_code city and state
+vendedores <- read_csv("files/olist_sellers_dataset.csv")
+
+#seller_zip_code city and state
+reviews <- read_csv("files/olist_order_reviews_dataset.csv")
+
+#preço, forma de pagamento, número de parcelas (installment)
+pagamentos <- read_csv("files/olist_order_payments_dataset.csv")
+
+#geolocalização, latitude, longitude, cidade, estado
+geo <- read_csv("files/olist_geolocation_dataset.csv")
+
+```
+
+
+## Distribuição de preços dos produtos vendidos. 
+
+```{r}
+ggplot(items, aes(price))+
+  geom_density()
+
+```
+
+## Clusterização de clientes
+
+```{r}
+#Seleção de variáveis
+
+#Clientes
+#estado, cidade 
+
+#Pedidos
+#order_id, costumer_id, order_status, order_purchase_timestamp
+
+
+
+
+pedidos_clientes<- left_join(pedidos,
+                             clientes,by="customer_id")
+
+
+pedidos_clientes <- left_join(pedidos_clientes,
+                              items %>%
+                                  select(order_id,product_id,seller_id,price,freight_value),by="order_id")
+
+pedidos_clientes <- left_join(pedidos_clientes,
+                              produtos %>%
+                                  select(product_id,product_category_name),by="product_id")
+
+marketplace <- left_join(pedidos_clientes,
+                              reviews %>%
+                              select(order_id,review_score,review_comment_title,review_comment_message),by="order_id")
+
+save(marketplace,file="files/marketplace")
+
+view(pedidos_clientes)
+
+
+```
+
+
+
+
+```{r}
+
+
+dados_geo <- pedidos_clientes %>% 
+  filter(customer_city=="sao paulo") %>% 
+  left_join(.,geo,by=c("customer_zip_code_prefix"="geolocation_zip_code_prefix")) %>% 
+  select(order_id,customer_unique_id,customer_zip_code_prefix,customer_city,)
+
+view(head(dados_geo,n = 1000))
+```
+
